@@ -17,9 +17,9 @@ function getErrorMessage(err) {
       return { code: 400, message: errorArr };
     }
     case 'CastError':
-      return { code: 400, message: 'Формат ID не совпадает с форматом ID БД' };
+      return { code: 400, message: ['Формат ID не совпадает с форматом ID БД'] };
     default:
-      return { code: 500, message: 'Произошла ошибка' };
+      return { code: 500, message: ['Произошла ошибка'] };
   }
 }
 
@@ -29,7 +29,7 @@ module.exports.getCards = (req, res) => {
     .then((card) => res.send({ data: card }))
     .catch((err) => {
       const error = getErrorMessage(err);
-      res.status(error.code).send({ message: error.message });
+      res.status(error.code).send({ message: error.message.join(', ') });
     });
 };
 
@@ -54,7 +54,7 @@ module.exports.deleteCardById = (req, res) => {
     })
     .catch((err) => {
       const error = getErrorMessage(err);
-      res.status(error.code).send({ message: error.message });
+      res.status(error.code).send({ message: error.message.join(', ') });
     });
 };
 
@@ -73,7 +73,7 @@ module.exports.likeCard = (req, res) => {
     })
     .catch((err) => {
       const error = getErrorMessage(err);
-      res.status(error.code).send({ message: error.message });
+      res.status(error.code).send({ message: error.message.join(', ') });
     });
 };
 
@@ -92,6 +92,6 @@ module.exports.dislikeCard = (req, res) => {
     })
     .catch((err) => {
       const error = getErrorMessage(err);
-      res.status(error.code).send({ message: error.message });
+      res.status(error.code).send({ message: error.message.join(', ') });
     });
 };
