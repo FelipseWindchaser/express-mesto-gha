@@ -8,8 +8,7 @@ const errMessage = {
 
 function getErrorMessage(err) {
   switch (err.name) {
-    case 'ValidationError':
-    case 'CastError': {
+    case 'ValidationError': {
       const errorArr = [];
       const errors = Object.values(err.errors);
       errors.forEach((item) => {
@@ -17,6 +16,8 @@ function getErrorMessage(err) {
       });
       return { code: 400, message: errorArr };
     }
+    case 'CastError':
+      return { code: 400, message: 'Формат ID не совпадает с форматом ID БД mongoose' };
     default:
       return { code: 500, message: 'Произошла ошибка' };
   }
@@ -27,7 +28,7 @@ module.exports.getUsers = (req, res) => {
     .then((user) => res.send({ data: user }))
     .catch((err) => {
       const error = getErrorMessage(err);
-      res.status(error.code).send(error.message);
+      res.status(error.code).send({ message: error.message });
     });
 };
 
@@ -41,7 +42,7 @@ module.exports.getUserId = (req, res) => {
     })
     .catch((err) => {
       const error = getErrorMessage(err);
-      res.status(error.code).send(error.message);
+      res.status(error.code).send({ message: error.message });
     });
 };
 
@@ -70,7 +71,7 @@ module.exports.refreshProfile = (req, res) => {
     })
     .catch((err) => {
       const error = getErrorMessage(err);
-      res.status(error.code).send(error.message);
+      res.status(error.code).send({ message: error.message });
     });
 };
 
@@ -89,6 +90,6 @@ module.exports.refreshProfileAvatar = (req, res) => {
     })
     .catch((err) => {
       const error = getErrorMessage(err);
-      res.status(error.code).send(error.message);
+      res.status(error.code).send({ message: error.message });
     });
 };
