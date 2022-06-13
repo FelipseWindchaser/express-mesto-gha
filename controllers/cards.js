@@ -1,18 +1,24 @@
 const Card = require('../models/card');
 
 const errMessage = {
-  400: { message: 'Переданы некорректные данные' },
+  // 400: { message: 'Переданы некорректные данные' },
   404: { message: 'Запрашиваемая карточка не найдена' },
-  500: { message: 'Произошла ошибка' },
+  // 500: { message: 'Произошла ошибка' },
 };
 
-function returnCodeError(err) {
+function getErrorMessage(err) {
   switch (err.name) {
     case 'ValidationError':
-    case 'CastError':
-      return 400;
+    case 'CastError': {
+      const errorArr = [];
+      const errors = Object.values(err.errors);
+      errors.forEach((item) => {
+        errorArr.push(item.message);
+      });
+      return { code: 400, message: errorArr };
+    }
     default:
-      return 500;
+      return { code: 500, message: 'Произошла ошибка' };
   }
 }
 
@@ -21,8 +27,8 @@ module.exports.getCards = (req, res) => {
     .populate('owner')
     .then((card) => res.send({ data: card }))
     .catch((err) => {
-      const codeError = returnCodeError(err);
-      res.status(codeError).send(errMessage[codeError]);
+      const error = getErrorMessage(err);
+      res.status(error.code).send(error.message);
     });
 };
 
@@ -32,8 +38,8 @@ module.exports.createCard = (req, res) => {
   Card.create({ name, link, owner: _id })
     .then((card) => res.send({ data: card }))
     .catch((err) => {
-      const codeError = returnCodeError(err);
-      res.status(codeError).send(errMessage[codeError]);
+      const error = getErrorMessage(err);
+      res.status(error.code).send({ message: error.message.join(', ') });
     });
 };
 
@@ -46,8 +52,8 @@ module.exports.deleteCardById = (req, res) => {
       res.send({ data: card });
     })
     .catch((err) => {
-      const codeError = returnCodeError(err);
-      res.status(codeError).send(errMessage[codeError]);
+      const error = getErrorMessage(err);
+      res.status(error.code).send({ message: error.message.join(', ') });
     });
 };
 
@@ -65,8 +71,8 @@ module.exports.likeCard = (req, res) => {
       res.send({ data: card });
     })
     .catch((err) => {
-      const codeError = returnCodeError(err);
-      res.status(codeError).send(errMessage[codeError]);
+      const error = getErrorMessage(err);
+      res.status(error.code).send({ message: error.message.join(', ') });
     });
 };
 
@@ -84,7 +90,7 @@ module.exports.dislikeCard = (req, res) => {
       res.send({ data: card });
     })
     .catch((err) => {
-      const codeError = returnCodeError(err);
-      res.status(codeError).send(errMessage[codeError]);
+      const error = getErrorMessage(err);
+      res.status(error.code).send({ message: error.message.join(', ') });
     });
 };
