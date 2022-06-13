@@ -54,7 +54,7 @@ module.exports.deleteCardById = (req, res) => {
     })
     .catch((err) => {
       const error = getErrorMessage(err);
-      res.status(error.code).send({ message: error.message.join(', ') });
+      res.status(error.code).send({ message: error.message });
     });
 };
 
@@ -73,7 +73,7 @@ module.exports.likeCard = (req, res) => {
     })
     .catch((err) => {
       const error = getErrorMessage(err);
-      res.status(error.code).send({ message: error.message.join(', ') });
+      res.status(error.code).send({ message: error.message });
     });
 };
 
@@ -92,6 +92,6 @@ module.exports.dislikeCard = (req, res) => {
     })
     .catch((err) => {
       const error = getErrorMessage(err);
-      res.status(error.code).send({ message: error.message.join(', ') });
+      res.status(error.code).send({ message: error.message });
     });
 };
