@@ -71,7 +71,8 @@ module.exports.refreshProfile = (req, res) => {
     })
     .catch((err) => {
       const error = getErrorMessage(err);
-      res.status(error.code).send({ message: error.message });
+      res.status(error.code).send({ message: error.message.join(', ') });
+      // res.status(404).send(err);
     });
 };
 
@@ -90,6 +91,6 @@ module.exports.refreshProfileAvatar = (req, res) => {
     })
     .catch((err) => {
       const error = getErrorMessage(err);
-      res.status(error.code).send({ message: error.message });
+      res.status(error.code).send({ message: error.message.join(', ') });
     });
 };
