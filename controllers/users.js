@@ -1,13 +1,18 @@
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 
 const errMessage = {
   // 400: { message: 'Переданы некорректные данные' },
   404: { message: 'Запрашиваемый пользователь не найден' },
+  401: { message: 'Ошибка авторизации' },
   // 500: { message: 'Произошла ошибка' },
 };
 
 function getErrorMessage(err) {
+  if (err.code === 11000) {
+    return { code: 409, message: ['пользователь с таким почтовым адресом уже существует'] };
+  }
   switch (err.name) {
     case 'ValidationError': {
       const errorArr = [];
@@ -106,5 +111,25 @@ module.exports.refreshProfileAvatar = (req, res) => {
     .catch((err) => {
       const error = getErrorMessage(err);
       res.status(error.code).send({ message: error.message.join(', ') });
+    });
+};
+
+module.exports.login = (req, res) => {
+  const { email, password } = req.body;
+  User.findUserByCredentials(
+    email,
+    password,
+  )
+    .then((user) => {
+      const { _id } = req.user;
+      const token = jwt.sign({ _id }, 'secret key', { expiresIn: '7d' });
+      res.cookie('jwt', token, {
+        maxAge: 86400 * 7,
+        httpOnly: true,
+      })
+        .send(user);
+    })
+    .catch(() => {
+      res.status(401).send(errMessage[401]);
     });
 };

@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
+const bcrypt = require('bcryptjs');
 
 function validateEmail(email) {
   return validator.isEmail(email);
@@ -27,7 +28,7 @@ const userSchema = new mongoose.Schema({
   },
   email: {
     type: String,
-    unique: [true, 'пользователь с таким почтовым адресом уже существует'],
+    unique: true,
     required: [true, 'необходимо указать почтовый адрес'],
     validate: [validateEmail, 'неправильно указан почтовый адрес или пароль'],
   },
@@ -37,5 +38,21 @@ const userSchema = new mongoose.Schema({
     minlength: [8, 'Длина поля должна быть не менее 8 символов'],
   },
 });
+
+userSchema.statics.findUserByCredentials = function checkUser(email, password) {
+  return this.findOne({ email })
+    .then((user) => {
+      if (!user) {
+        return Promise.reject(new Error('Неправильные почта или пароль'));
+      }
+      return bcrypt.compare(password, user.password)
+        .then((matched) => {
+          if (!matched) {
+            return Promise.reject(new Error('Неправильные почта или пароль'));
+          }
+          return user;
+        });
+    });
+};
 
 module.exports = mongoose.model('user', userSchema);
