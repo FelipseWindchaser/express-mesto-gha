@@ -1,14 +1,17 @@
-const Card = require('../models/card');
+const Card = require("../models/card");
 
 const errMessage = {
   // 400: { message: 'Переданы некорректные данные' },
-  404: { message: 'Запрашиваемая карточка не найдена' },
+  403: {
+    message: "Недостаточно прав для совершения операции. Отказано в доступе",
+  },
+  404: { message: "Запрашиваемая карточка не найдена" },
   // 500: { message: 'Произошла ошибка' },
 };
 
 function getErrorMessage(err) {
   switch (err.name) {
-    case 'ValidationError': {
+    case "ValidationError": {
       const errorArr = [];
       const errors = Object.values(err.errors);
       errors.forEach((item) => {
@@ -16,20 +19,23 @@ function getErrorMessage(err) {
       });
       return { code: 400, message: errorArr };
     }
-    case 'CastError':
-      return { code: 400, message: ['Формат ID не совпадает с форматом ID БД'] };
+    case "CastError":
+      return {
+        code: 400,
+        message: ["Формат ID не совпадает с форматом ID БД mongoose"],
+      };
     default:
-      return { code: 500, message: ['Произошла ошибка'] };
+      return { code: 500, message: ["Произошла ошибка"] };
   }
 }
 
 module.exports.getCards = (req, res) => {
   Card.find({})
-    .populate('owner')
+    .populate("owner")
     .then((card) => res.send({ data: card }))
     .catch((err) => {
       const error = getErrorMessage(err);
-      res.status(error.code).send({ message: error.message.join(', ') });
+      res.status(error.code).send({ message: error.message.join(", ") });
     });
 };
 
@@ -40,21 +46,26 @@ module.exports.createCard = (req, res) => {
     .then((card) => res.send({ data: card }))
     .catch((err) => {
       const error = getErrorMessage(err);
-      res.status(error.code).send({ message: error.message.join(', ') });
+      res.status(error.code).send({ message: error.message.join(", ") });
     });
 };
 
 module.exports.deleteCardById = (req, res) => {
-  Card.findByIdAndRemove(req.params.cardId)
+  Card.findById(req.params.cardId)
     .then((card) => {
       if (!card) {
         res.status(404).send(errMessage[404]);
+      } else if (req.user._id !== card.owner.toString()) {
+        res.status(403).send(errMessage[403]);
+      } else {
+        Card.findByIdAndRemove(req.params.cardId).then(() =>
+          res.send({ message: "Карточка успешно удалена" })
+        );
       }
-      res.send({ data: card });
     })
     .catch((err) => {
       const error = getErrorMessage(err);
-      res.status(error.code).send({ message: error.message.join(', ') });
+      res.status(error.code).send({ message: error.message.join(", ") });
     });
 };
 
@@ -63,7 +74,7 @@ module.exports.likeCard = (req, res) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $addToSet: { likes: _id } },
-    { new: true },
+    { new: true }
   )
     .then((card) => {
       if (!card) {
@@ -73,7 +84,7 @@ module.exports.likeCard = (req, res) => {
     })
     .catch((err) => {
       const error = getErrorMessage(err);
-      res.status(error.code).send({ message: error.message.join(', ') });
+      res.status(error.code).send({ message: error.message.join(", ") });
     });
 };
 
@@ -82,7 +93,7 @@ module.exports.dislikeCard = (req, res) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $pull: { likes: _id } },
-    { new: true },
+    { new: true }
   )
     .then((card) => {
       if (!card) {
@@ -92,6 +103,6 @@ module.exports.dislikeCard = (req, res) => {
     })
     .catch((err) => {
       const error = getErrorMessage(err);
-      res.status(error.code).send({ message: error.message.join(', ') });
+      res.status(error.code).send({ message: error.message.join(", ") });
     });
 };

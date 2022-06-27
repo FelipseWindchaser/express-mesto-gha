@@ -1,20 +1,25 @@
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const User = require('../models/user');
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const User = require("../models/user");
+
+const { NODE_ENV, JWT_SECRET } = process.env;
 
 const errMessage = {
   // 400: { message: 'Переданы некорректные данные' },
-  404: { message: 'Запрашиваемый пользователь не найден' },
-  401: { message: 'Ошибка авторизации' },
+  404: { message: "Запрашиваемый пользователь не найден" },
+  401: { message: "Ошибка авторизации" },
   // 500: { message: 'Произошла ошибка' },
 };
 
 function getErrorMessage(err) {
   if (err.code === 11000) {
-    return { code: 409, message: ['пользователь с таким почтовым адресом уже существует'] };
+    return {
+      code: 409,
+      message: ["пользователь с таким почтовым адресом уже существует"],
+    };
   }
   switch (err.name) {
-    case 'ValidationError': {
+    case "ValidationError": {
       const errorArr = [];
       const errors = Object.values(err.errors);
       errors.forEach((item) => {
@@ -22,10 +27,13 @@ function getErrorMessage(err) {
       });
       return { code: 400, message: errorArr };
     }
-    case 'CastError':
-      return { code: 400, message: ['Формат ID не совпадает с форматом ID БД mongoose'] };
+    case "CastError":
+      return {
+        code: 400,
+        message: ["Формат ID не совпадает с форматом ID БД mongoose"],
+      };
     default:
-      return { code: 500, message: ['Произошла ошибка'] };
+      return { code: 500, message: ["Произошла ошибка"] };
   }
 }
 
@@ -34,7 +42,7 @@ module.exports.getUsers = (req, res) => {
     .then((user) => res.send({ data: user }))
     .catch((err) => {
       const error = getErrorMessage(err);
-      res.status(error.code).send({ message: error.message.join(', ') });
+      res.status(error.code).send({ message: error.message.join(", ") });
     });
 };
 
@@ -48,20 +56,14 @@ module.exports.getUserId = (req, res) => {
     })
     .catch((err) => {
       const error = getErrorMessage(err);
-      res.status(error.code).send({ message: error.message.join(', ') });
+      res.status(error.code).send({ message: error.message.join(", ") });
     });
 };
 
 module.exports.createUser = (req, res) => {
-  const {
-    name,
-    about,
-    avatar,
-    email,
-    password,
-  } = req.body;
-  bcrypt.hash(password, 10)
-    .then((hash) => User.create({
+  const { name, about, avatar, email, password } = req.body;
+  bcrypt.hash(password, 10).then((hash) =>
+    User.create({
       name,
       about,
       avatar,
@@ -71,17 +73,37 @@ module.exports.createUser = (req, res) => {
       .then((user) => res.send({ data: user }))
       .catch((err) => {
         const error = getErrorMessage(err);
-        res.status(error.code).send({ message: error.message.join(', ') });
-      }));
+        res.status(error.code).send({ message: error.message.join(", ") });
+      })
+  );
+};
+
+module.exports.getCurrentUserProfile = (req, res) => {
+  const { _id } = req.user;
+  User.findById({ _id })
+    .then((user) => {
+      if (!user) {
+        res.status(404).send(errMessage[404]);
+      }
+      return res.send(user);
+    })
+    .catch((err) => {
+      const error = getErrorMessage(err);
+      res.status(error.code).send({ message: error.message.join(", ") });
+    });
 };
 
 module.exports.refreshProfile = (req, res) => {
   const { _id } = req.user;
   const { name, about } = req.body;
-  User.findByIdAndUpdate(_id, { name, about }, {
-    new: true,
-    runValidators: true,
-  })
+  User.findByIdAndUpdate(
+    _id,
+    { name, about },
+    {
+      new: true,
+      runValidators: true,
+    }
+  )
     .then((user) => {
       if (!user) {
         res.status(404).send(errMessage[404]);
@@ -90,7 +112,7 @@ module.exports.refreshProfile = (req, res) => {
     })
     .catch((err) => {
       const error = getErrorMessage(err);
-      res.status(error.code).send({ message: error.message.join(', ') });
+      res.status(error.code).send({ message: error.message.join(", ") });
       // res.status(404).send(err);
     });
 };
@@ -98,10 +120,14 @@ module.exports.refreshProfile = (req, res) => {
 module.exports.refreshProfileAvatar = (req, res) => {
   const { _id } = req.user;
   const { avatar } = req.body;
-  User.findByIdAndUpdate(_id, { avatar }, {
-    new: true,
-    runValidators: true,
-  })
+  User.findByIdAndUpdate(
+    _id,
+    { avatar },
+    {
+      new: true,
+      runValidators: true,
+    }
+  )
     .then((user) => {
       if (!user) {
         res.status(404).send(errMessage[404]);
@@ -110,23 +136,25 @@ module.exports.refreshProfileAvatar = (req, res) => {
     })
     .catch((err) => {
       const error = getErrorMessage(err);
-      res.status(error.code).send({ message: error.message.join(', ') });
+      res.status(error.code).send({ message: error.message.join(", ") });
     });
 };
 
 module.exports.login = (req, res) => {
   const { email, password } = req.body;
-  User.findUserByCredentials(
-    email,
-    password,
-  )
+  User.findUserByCredentials(email, password)
     .then((user) => {
-      const { _id } = req.user;
-      const token = jwt.sign({ _id }, 'secret key', { expiresIn: '7d' });
-      res.cookie('jwt', token, {
-        maxAge: 86400 * 7,
-        httpOnly: true,
-      })
+      const { _id } = user;
+      const token = jwt.sign(
+        { _id },
+        NODE_ENV === "production" ? JWT_SECRET : "top-secret",
+        { expiresIn: "7d" }
+      );
+      res
+        .cookie("jwt", token, {
+          maxAge: 86400 * 7,
+          httpOnly: true,
+        })
         .send(user);
     })
     .catch(() => {
