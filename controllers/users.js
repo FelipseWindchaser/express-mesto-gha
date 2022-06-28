@@ -44,6 +44,13 @@ module.exports.createUser = (req, res, next) => {
           });
           next(error);
         }
+        if (err.name === "ValidationError") {
+          const error = new ErrorHandler({
+            statusCode: 400,
+            message: "Переданы некорректные данные",
+          });
+          next(error);
+        }
         next(err);
       })
   );
