@@ -1,75 +1,54 @@
+const ErrorHandler = require("../errors/errorHandler");
 const Card = require("../models/card");
 
-const errMessage = {
-  // 400: { message: 'Переданы некорректные данные' },
-  403: {
-    message: "Недостаточно прав для совершения операции. Отказано в доступе",
-  },
-  404: { message: "Запрашиваемая карточка не найдена" },
-  // 500: { message: 'Произошла ошибка' },
-};
-
-function getErrorMessage(err) {
-  switch (err.name) {
-    case "ValidationError": {
-      const errorArr = [];
-      const errors = Object.values(err.errors);
-      errors.forEach((item) => {
-        errorArr.push(item.message);
-      });
-      return { code: 400, message: errorArr };
-    }
-    case "CastError":
-      return {
-        code: 400,
-        message: ["Формат ID не совпадает с форматом ID БД mongoose"],
-      };
-    default:
-      return { code: 500, message: ["Произошла ошибка"] };
-  }
-}
-
-module.exports.getCards = (req, res) => {
+module.exports.getCards = (req, res, next) => {
   Card.find({})
     .populate("owner")
     .then((card) => res.send({ data: card }))
-    .catch((err) => {
-      const error = getErrorMessage(err);
-      res.status(error.code).send({ message: error.message.join(", ") });
-    });
+    .catch(next);
 };
 
-module.exports.createCard = (req, res) => {
+module.exports.createCard = (req, res, next) => {
   const { _id } = req.user;
   const { name, link } = req.body;
   Card.create({ name, link, owner: _id })
     .then((card) => res.send({ data: card }))
     .catch((err) => {
-      const error = getErrorMessage(err);
-      res.status(error.code).send({ message: error.message.join(", ") });
+      if (err.name === "ValidationError") {
+        const error = new ErrorHandler({
+          statusCode: 400,
+          message: "Переданы некорректные данные",
+        });
+        next(error);
+      }
+      next(err);
     });
 };
 
-module.exports.deleteCardById = (req, res) => {
+module.exports.deleteCardById = (req, res, next) => {
   Card.findById(req.params.cardId)
     .then((card) => {
       if (!card) {
-        res.status(404).send(errMessage[404]);
+        throw new ErrorHandler({
+          statusCode: 404,
+          message: "Запрашиваемая карточка не найдена",
+        });
       } else if (req.user._id !== card.owner.toString()) {
-        res.status(403).send(errMessage[403]);
+        throw new ErrorHandler({
+          statusCode: 403,
+          message:
+            "Недостаточно прав для совершения операции. Отказано в доступе",
+        });
       } else {
         Card.findByIdAndRemove(req.params.cardId).then(() =>
           res.send({ message: "Карточка успешно удалена" })
         );
       }
     })
-    .catch((err) => {
-      const error = getErrorMessage(err);
-      res.status(error.code).send({ message: error.message.join(", ") });
-    });
+    .catch(next);
 };
 
-module.exports.likeCard = (req, res) => {
+module.exports.likeCard = (req, res, next) => {
   const { _id } = req.user;
   Card.findByIdAndUpdate(
     req.params.cardId,
@@ -78,17 +57,17 @@ module.exports.likeCard = (req, res) => {
   )
     .then((card) => {
       if (!card) {
-        res.status(404).send(errMessage[404]);
+        throw new ErrorHandler({
+          statusCode: 404,
+          message: "Запрашиваемая карточка не найдена",
+        });
       }
       res.send({ data: card });
     })
-    .catch((err) => {
-      const error = getErrorMessage(err);
-      res.status(error.code).send({ message: error.message.join(", ") });
-    });
+    .catch(next);
 };
 
-module.exports.dislikeCard = (req, res) => {
+module.exports.dislikeCard = (req, res, next) => {
   const { _id } = req.user;
   Card.findByIdAndUpdate(
     req.params.cardId,
@@ -97,12 +76,12 @@ module.exports.dislikeCard = (req, res) => {
   )
     .then((card) => {
       if (!card) {
-        res.status(404).send(errMessage[404]);
+        throw new ErrorHandler({
+          statusCode: 404,
+          message: "Запрашиваемая карточка не найдена",
+        });
       }
       res.send({ data: card });
     })
-    .catch((err) => {
-      const error = getErrorMessage(err);
-      res.status(error.code).send({ message: error.message.join(", ") });
-    });
+    .catch(next);
 };

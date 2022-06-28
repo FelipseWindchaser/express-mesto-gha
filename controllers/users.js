@@ -1,66 +1,31 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const ErrorHandler = require("../errors/errorHandler");
 const User = require("../models/user");
 
 const { NODE_ENV, JWT_SECRET } = process.env;
 
-const errMessage = {
-  // 400: { message: 'Переданы некорректные данные' },
-  404: { message: "Запрашиваемый пользователь не найден" },
-  401: { message: "Ошибка авторизации" },
-  // 500: { message: 'Произошла ошибка' },
-};
-
-function getErrorMessage(err) {
-  if (err.code === 11000) {
-    return {
-      code: 409,
-      message: ["пользователь с таким почтовым адресом уже существует"],
-    };
-  }
-  switch (err.name) {
-    case "ValidationError": {
-      const errorArr = [];
-      const errors = Object.values(err.errors);
-      errors.forEach((item) => {
-        errorArr.push(item.message);
-      });
-      return { code: 400, message: errorArr };
-    }
-    case "CastError":
-      return {
-        code: 400,
-        message: ["Формат ID не совпадает с форматом ID БД mongoose"],
-      };
-    default:
-      return { code: 500, message: ["Произошла ошибка"] };
-  }
-}
-
-module.exports.getUsers = (req, res) => {
+module.exports.getUsers = (req, res, next) => {
   User.find({})
     .then((user) => res.send({ data: user }))
-    .catch((err) => {
-      const error = getErrorMessage(err);
-      res.status(error.code).send({ message: error.message.join(", ") });
-    });
+    .catch(next);
 };
 
-module.exports.getUserId = (req, res) => {
+module.exports.getUserId = (req, res, next) => {
   User.findById(req.params.userId)
     .then((user) => {
       if (!user) {
-        res.status(404).send(errMessage[404]);
+        throw new ErrorHandler({
+          statusCode: 404,
+          message: "Запрашиваемый пользователь не найден",
+        });
       }
       res.send({ data: user });
     })
-    .catch((err) => {
-      const error = getErrorMessage(err);
-      res.status(error.code).send({ message: error.message.join(", ") });
-    });
+    .catch(next);
 };
 
-module.exports.createUser = (req, res) => {
+module.exports.createUser = (req, res, next) => {
   const { name, about, avatar, email, password } = req.body;
   bcrypt.hash(password, 10).then((hash) =>
     User.create({
@@ -72,28 +37,34 @@ module.exports.createUser = (req, res) => {
     })
       .then((user) => res.send({ data: user }))
       .catch((err) => {
-        const error = getErrorMessage(err);
-        res.status(error.code).send({ message: error.message.join(", ") });
+        if (err.code === 11000) {
+          const error = new ErrorHandler({
+            statusCode: 409,
+            message: "Пользователь с таким почтовым адресом уже существует",
+          });
+          next(error);
+        }
+        next(err);
       })
   );
 };
 
-module.exports.getCurrentUserProfile = (req, res) => {
+module.exports.getCurrentUserProfile = (req, res, next) => {
   const { _id } = req.user;
   User.findById({ _id })
     .then((user) => {
       if (!user) {
-        res.status(404).send(errMessage[404]);
+        throw new ErrorHandler({
+          statusCode: 404,
+          message: "Запрашиваемый пользователь не найден",
+        });
       }
       return res.send(user);
     })
-    .catch((err) => {
-      const error = getErrorMessage(err);
-      res.status(error.code).send({ message: error.message.join(", ") });
-    });
+    .catch(next);
 };
 
-module.exports.refreshProfile = (req, res) => {
+module.exports.refreshProfile = (req, res, next) => {
   const { _id } = req.user;
   const { name, about } = req.body;
   User.findByIdAndUpdate(
@@ -106,18 +77,17 @@ module.exports.refreshProfile = (req, res) => {
   )
     .then((user) => {
       if (!user) {
-        res.status(404).send(errMessage[404]);
+        throw new ErrorHandler({
+          statusCode: 404,
+          message: "Запрашиваемый пользователь не найден",
+        });
       }
       res.send({ data: user });
     })
-    .catch((err) => {
-      const error = getErrorMessage(err);
-      res.status(error.code).send({ message: error.message.join(", ") });
-      // res.status(404).send(err);
-    });
+    .catch(next);
 };
 
-module.exports.refreshProfileAvatar = (req, res) => {
+module.exports.refreshProfileAvatar = (req, res, next) => {
   const { _id } = req.user;
   const { avatar } = req.body;
   User.findByIdAndUpdate(
@@ -130,17 +100,17 @@ module.exports.refreshProfileAvatar = (req, res) => {
   )
     .then((user) => {
       if (!user) {
-        res.status(404).send(errMessage[404]);
+        throw new ErrorHandler({
+          statusCode: 404,
+          message: "Запрашиваемый пользователь не найден",
+        });
       }
       res.send({ data: user });
     })
-    .catch((err) => {
-      const error = getErrorMessage(err);
-      res.status(error.code).send({ message: error.message.join(", ") });
-    });
+    .catch(next);
 };
 
-module.exports.login = (req, res) => {
+module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
   User.findUserByCredentials(email, password)
     .then((user) => {
@@ -157,7 +127,5 @@ module.exports.login = (req, res) => {
         })
         .send(user);
     })
-    .catch(() => {
-      res.status(401).send(errMessage[401]);
-    });
+    .catch(next);
 };
