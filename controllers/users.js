@@ -35,7 +35,9 @@ module.exports.createUser = (req, res, next) => {
       email,
       password: hash,
     })
-      .then((user) => res.send({ data: user }))
+      .then((user) => {
+        User.findById(user._id).then((data) => res.send({ data }));
+      })
       .catch((err) => {
         if (err.code === 11000) {
           const error = new ErrorHandler({
@@ -120,12 +122,14 @@ module.exports.login = (req, res, next) => {
         NODE_ENV === "production" ? JWT_SECRET : "top-secret",
         { expiresIn: "7d" }
       );
-      res
-        .cookie("jwt", token, {
-          maxAge: 86400 * 7,
-          httpOnly: true,
-        })
-        .send(user);
+      User.findById(user._id).then((data) => {
+        res
+          .cookie("jwt", token, {
+            maxAge: 86400 * 7,
+            httpOnly: true,
+          })
+          .send(data);
+      });
     })
     .catch(next);
 };
