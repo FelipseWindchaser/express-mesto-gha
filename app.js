@@ -13,7 +13,7 @@ const AppRoutes = require('./routes/routes');
 //   'http://felipse.nomorepartiesxyz.ru',
 //   'https://felipse.nomorepartiesxyz.ru',
 // ];
-const { PORT = 80 } = process.env;
+const { PORT = 3000 } = process.env;
 const app = express();
 
 mongoose.connect('mongodb://localhost:27017/mestodb', {
