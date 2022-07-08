@@ -1,18 +1,18 @@
 const express = require('express');
 require('dotenv').config();
 const bodyParser = require('body-parser');
-// const cors = require('cors');
+const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const mongoose = require('mongoose');
 const { errors } = require('celebrate');
 const AppRoutes = require('./routes/routes');
 
-// const allowedCors = [
-//   'http://localhost:3000',
-//   'https://localhost:3000',
-//   'http://felipse.nomorepartiesxyz.ru',
-//   'https://felipse.nomorepartiesxyz.ru',
-// ];
+const allowedCors = [
+  'http://localhost:3000',
+  'https://localhost:3000',
+  'http://felipse.nomorepartiesxyz.ru',
+  'https://felipse.nomorepartiesxyz.ru',
+];
 const { PORT = 3000 } = process.env;
 const app = express();
 
