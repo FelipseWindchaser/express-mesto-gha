@@ -1,11 +1,18 @@
 const express = require('express');
 require('dotenv').config();
 const bodyParser = require('body-parser');
+const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const mongoose = require('mongoose');
 const { errors } = require('celebrate');
 const AppRoutes = require('./routes/routes');
 
+const allowedCors = [
+  'http://localhost:3000',
+  'https://localhost:3000',
+  'http://felipse.nomorepartiesxyz.ru',
+  'https://felipse.nomorepartiesxyz.ru',
+];
 const { PORT = 3000 } = process.env;
 const app = express();
 
@@ -16,6 +23,12 @@ mongoose.connect('mongodb://localhost:27017/mestodb', {
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(
+  cors({
+    origin: allowedCors,
+    credentials: true,
+  }),
+);
 app.use(cookieParser());
 app.use('/', AppRoutes);
 
