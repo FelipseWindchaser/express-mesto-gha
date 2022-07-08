@@ -5,6 +5,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const mongoose = require('mongoose');
 const { errors } = require('celebrate');
+const { requestLogger, errorLogger } = require('./middlewares/logger');
 const AppRoutes = require('./routes/routes');
 
 const allowedCors = [
@@ -21,6 +22,7 @@ mongoose.connect('mongodb://localhost:27017/mestodb', {
   autoIndex: true,
 });
 
+app.use(requestLogger);
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(
@@ -32,6 +34,7 @@ app.use(
 app.use(cookieParser());
 app.use('/', AppRoutes);
 
+app.use(errorLogger);
 app.use(errors());
 
 app.use((err, req, res, next) => {
