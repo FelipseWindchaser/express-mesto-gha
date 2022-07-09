@@ -18,7 +18,7 @@ module.exports.getUserId = (req, res, next) => {
       if (!user) {
         throw new ErrorHandler(userNotFound);
       }
-      res.send({ data: user });
+      res.send(user);
     })
     .catch(next);
 };
@@ -73,7 +73,7 @@ module.exports.refreshProfile = (req, res, next) => {
       if (!user) {
         throw new ErrorHandler(userNotFound);
       }
-      res.send({ data: user });
+      res.send(user);
     })
     .catch(next);
 };
@@ -93,7 +93,7 @@ module.exports.refreshProfileAvatar = (req, res, next) => {
       if (!user) {
         throw new ErrorHandler(userNotFound);
       }
-      res.send({ data: user });
+      res.send(user);
     })
     .catch(next);
 };
@@ -113,9 +113,20 @@ module.exports.login = (req, res, next) => {
           .cookie('jwt', token, {
             maxAge: 86400 * 1000 * 7,
             httpOnly: true,
+            secure: true,
           })
           .send(data);
       });
     })
     .catch(next);
+};
+
+module.exports.logout = (req, res) => {
+  res
+    .cookie('jwt', '', {
+      maxAge: -1,
+      httpOnly: true,
+      secure: true,
+    })
+    .send({ message: 'Вы успешно разлогинились' });
 };

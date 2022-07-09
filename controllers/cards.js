@@ -4,8 +4,8 @@ const Card = require('../models/card');
 
 module.exports.getCards = (req, res, next) => {
   Card.find({})
-    .populate('owner')
-    .then((card) => res.send({ data: card }))
+    .populate(['owner', 'likes'])
+    .then((card) => res.send(card.reverse()))
     .catch(next);
 };
 
@@ -13,7 +13,12 @@ module.exports.createCard = (req, res, next) => {
   const { _id } = req.user;
   const { name, link } = req.body;
   Card.create({ name, link, owner: _id })
-    .then((card) => res.send({ data: card }))
+    .then((item) => {
+      Card.findById(item._id)
+        .populate(['owner', 'likes'])
+        .then((card) => res.send(card))
+        .catch(next);
+    })
     .catch((err) => {
       if (err.name === 'ValidationError') {
         const error = new ErrorHandler(badRequest);
@@ -31,7 +36,8 @@ module.exports.deleteCardById = (req, res, next) => {
       } else if (req.user._id !== card.owner.toString()) {
         throw new ErrorHandler(forbidden);
       } else {
-        Card.findByIdAndRemove(req.params.cardId).then(() => res.send({ message: 'Карточка успешно удалена' }));
+        Card.findByIdAndRemove(req.params.cardId)
+          .then(() => res.send({ message: 'Карточка успешно удалена' }));
       }
     })
     .catch(next);
@@ -44,11 +50,12 @@ module.exports.likeCard = (req, res, next) => {
     { $addToSet: { likes: _id } },
     { new: true },
   )
+    .populate(['owner', 'likes'])
     .then((card) => {
       if (!card) {
         throw new ErrorHandler(cardNotFound);
       }
-      res.send({ data: card });
+      res.send(card);
     })
     .catch(next);
 };
@@ -60,11 +67,12 @@ module.exports.dislikeCard = (req, res, next) => {
     { $pull: { likes: _id } },
     { new: true },
   )
+    .populate(['owner', 'likes'])
     .then((card) => {
       if (!card) {
         throw new ErrorHandler(cardNotFound);
       }
-      res.send({ data: card });
+      res.send(card);
     })
     .catch(next);
 };
