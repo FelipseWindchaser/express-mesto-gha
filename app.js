@@ -13,6 +13,8 @@ const allowedCors = [
   'https://localhost:3000',
   'http://felipse.nomorepartiesxyz.ru',
   'https://felipse.nomorepartiesxyz.ru',
+  'http://api.felipse.nomorepartiesxyz.ru',
+  'https://api.felipse.nomorepartiesxyz.ru',
 ];
 const { PORT = 3000 } = process.env;
 const app = express();
