@@ -35,7 +35,7 @@ module.exports.createUser = (req, res, next) => {
     password: hash,
   })
     .then((user) => {
-      User.findById(user._id).then((data) => res.send({ data }));
+      User.findById(user._id).then((data) => res.send(data));
     })
     .catch((err) => {
       if (err.code === 11000) {
@@ -113,7 +113,6 @@ module.exports.login = (req, res, next) => {
           .cookie('jwt', token, {
             maxAge: 86400 * 1000 * 7,
             httpOnly: true,
-            secure: true,
           })
           .send(data);
       });
@@ -126,7 +125,6 @@ module.exports.logout = (req, res) => {
     .cookie('jwt', '', {
       maxAge: -1,
       httpOnly: true,
-      secure: true,
     })
     .send({ message: 'Вы успешно разлогинились' });
 };
