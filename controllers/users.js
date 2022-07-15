@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { userNotFound, conflict } = require('../errors/errorContent');
+const { userNotFound, conflict, badRequest } = require('../errors/errorContent');
 const ErrorHandler = require('../errors/errorHandler');
 const User = require('../models/user');
 
@@ -40,9 +40,13 @@ module.exports.createUser = (req, res, next) => {
     .catch((err) => {
       if (err.code === 11000) {
         const error = new ErrorHandler(conflict);
-        next(error);
+        return next(error);
       }
-      next(err);
+      if (err.name === 'ValidationError') {
+        const error = new ErrorHandler(badRequest);
+        return next(error);
+      }
+      return next(err);
     }));
 };
 
@@ -75,7 +79,13 @@ module.exports.refreshProfile = (req, res, next) => {
       }
       res.send(user);
     })
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        const error = new ErrorHandler(badRequest);
+        return next(error);
+      }
+      return next(err);
+    });
 };
 
 module.exports.refreshProfileAvatar = (req, res, next) => {
@@ -95,7 +105,13 @@ module.exports.refreshProfileAvatar = (req, res, next) => {
       }
       res.send(user);
     })
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        const error = new ErrorHandler(badRequest);
+        return next(error);
+      }
+      return next(err);
+    });
 };
 
 module.exports.login = (req, res, next) => {

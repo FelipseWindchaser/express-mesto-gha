@@ -22,9 +22,9 @@ module.exports.createCard = (req, res, next) => {
     .catch((err) => {
       if (err.name === 'ValidationError') {
         const error = new ErrorHandler(badRequest);
-        next(error);
+        return next(error);
       }
-      next(err);
+      return next(err);
     });
 };
 
@@ -36,7 +36,8 @@ module.exports.deleteCardById = (req, res, next) => {
       } else if (req.user._id !== card.owner.toString()) {
         throw new ErrorHandler(forbidden);
       } else {
-        Card.findByIdAndRemove(req.params.cardId)
+        // Card.findByIdAndRemove(req.params.cardId)
+        return card.remove()
           .then(() => res.send({ message: 'Карточка успешно удалена' }));
       }
     })
